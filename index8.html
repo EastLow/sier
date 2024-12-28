@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iCal Calendar Viewer</title>
+    
+    <!-- FullCalendar CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@3.2.0/dist/fullcalendar.min.css" rel="stylesheet" />
+
+    <!-- jQuery and Moment.js (Required by FullCalendar) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
+    
+    <!-- FullCalendar JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@3.2.0/dist/fullcalendar.min.js"></script>
+    
+</head>
+<body>
+    <h1>iCal Calendar Viewer</h1>
+    <!-- The div where the calendar will be displayed -->
+    <div id="calendar" style="width: 80%; margin: 0 auto;"></div>
+
+    <script>
+        // iCal URLs (replace with your own)
+        const icalUrls = [
+            'https://www1.navcanada.ca/getmyschedule/11624-da6da62c-5ee6-4c6e-baec-bcf3f62bd335.ics',
+            'https://www1.navcanada.ca/getmyschedule/151739-86f018f5-8746-47be-971d-04aeb11e36c2.ics',
+            'https://www1.navcanada.ca/getmyschedule/10687-4166f096-c7d1-45be-b287-357a39e49df9.ics'
+        ];
+
+        const fetchAndDisplayEvents = async () => {
+            const calendarDiv = document.getElementById('calendar');
+            calendarDiv.innerHTML = 'Loading events...';
+
+            try {
+                // Use a different CORS proxy (thingproxy)
+                const proxy = 'https://thingproxy.freeboard.io/fetch/';
+
+                // Fetch iCal data for each URL using the CORS proxy
+                const responses = await Promise.all(icalUrls.map(url => fetch(proxy + encodeURIComponent(url)).then(response => response.text())));
+
+                // Parse and prepare the events for FullCalendar
+                const events = [];
+
+                responses.forEach((icalData, index) => {
+                    console.log(`Processing iCal data from URL ${index + 1}:`);
+                    console.log(icalData);  // Log the raw iCal data for debugging
+
+                    const lines = icalData.split('\n');
+                    let event = {};
+                    let startDate, endDate, summary;
+
+                    lines.forEach(line => {
+                        if (line.startsWith('SUMMARY:')) {
+                            summary = line.replace('SUMMARY:', '').trim();
+                        }
+                        if (line.startsWith('DTSTART:')) {
+                            startDate = line.replace('DTSTART:', '').trim();
+                        }
+                        if (line.startsWith('DTEND:')) {
+                            endDate = line.replace('DTEND:', '').trim();
+                        }
+
+                        // If we have start date, summary, and end date, push event
+                        if (startDate && summary && endDate) {
+                            const formattedStartDate = moment(startDate, 'YYYYMMDDTHHmmssZ').format();
+                            const formattedEndDate = moment(endDate, 'YYYYMMDDTHHmmssZ').format();
+
+                            console.log('Parsed event:', summary, formattedStartDate, formattedEndDate);
+
+                            events.push({
+                                title: summary,
+                                start: formattedStartDate,
+                                end: formattedEndDate,
+                            });
+                            startDate = endDate = summary = null;  // Reset for the next event
+                        }
+                    });
+                });
+
+                console.log('Final events:', events);
+
+                // Initialize FullCalendar with the fetched events
+                $('#calendar').fullCalendar({
+                    events: events,
+                    header: {
+                        left: 'prev,next today',
+                        center: 'title',
+                        right: 'month,agendaWeek,agendaDay'
+                    }
+                });
+
+            } catch (error) {
+                console.error('Error fetching iCal data:', error);
+                document.getElementById('calendar').textContent = 'Failed to load calendar events.';
+            }
+        };
+
+        // Call the function to fetch and display events
+        fetchAndDisplayEvents();
+    </script>
+</body>
+</html>
