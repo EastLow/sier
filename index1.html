@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>iCal Calendar Viewer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    #calendar {
+      margin-top: 20px;
+    }
+    .event {
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 5px;
+      background-color: #f9f9f9;
+    }
+    .event h3 {
+      margin: 0;
+      color: #333;
+    }
+    .event p {
+      margin: 5px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>iCal Calendar Viewer</h1>
+  <p>Below are the events from the provided iCal URLs:</p>
+  
+  <div id="calendar"></div>
+
+  <!-- Include ical.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ical.js/1.4.0/ical.min.js"></script>
+
+  <script>
+    // List of iCal URLs
+    const icalUrls = [
+      'https://www1.navcanada.ca/getmyschedule/11624-da6da62c-5ee6-4c6e-baec-bcf3f62bd335.ics',
+      'https://www1.navcanada.ca/getmyschedule/151739-86f018f5-8746-47be-971d-04aeb11e36c2.ics',
+      'https://www1.navcanada.ca/getmyschedule/10687-4166f096-c7d1-45be-b287-357a39e49df9.ics'
+    ];
+
+    // Function to fetch and parse iCal data
+    function fetchAndParseICal(url) {
+      console.log(`Fetching iCal data from: ${url}`); // Debugging log
+      fetch(url)
+        .then(response => response.text())
+        .then(icalData => {
+          console.log('Fetched iCal data:', icalData); // Log the raw iCal data
+
+          try {
+            const jCalData = ICAL.parse(icalData); // Parse the iCal data
+            const comp = new ICAL.Component(jCalData);
+            const events = comp.getAllSubcomponents('vevent'); // Get all events
+
+            // If events are found, display them
+            if (events.length > 0) {
+              events.forEach(event => {
+                const e = new ICAL.Event(event);
+                const eventElement = document.createElement('div');
+                eventElement.className = 'event';
+                eventElement.innerHTML = `
+                  <h3>${e.summary}</h3>
+                  <p><strong>Start:</strong> ${e.startDate.toString()}</p>
+                  <p><strong>End:</strong> ${e.endDate.toString()}</p>
+                  <p><strong>Location:</strong> ${e.location || 'N/A'}</p>
+                `;
+                document.getElementById('calendar').appendChild(eventElement);
+              });
+            } else {
+              document.getElementById('calendar').innerHTML = "<p>No events found in this calendar.</p>";
+            }
+          } catch (error) {
+            console.error('Error parsing iCal data:', error);
+            document.getElementById('calendar').innerHTML = "<p>There was an error parsing the events. Please try again later.</p>";
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching iCal data:', error);
+          document.getElementById('calendar').innerHTML = "<p>There was an error loading the events. Please try again later.</p>";
+        });
+    }
+
+    // Fetch and display events from all iCal URLs
+    icalUrls.forEach(url => fetchAndParseICal(url));
+  </script>
+
+</body>
+</html>
