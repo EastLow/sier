@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live iCal Calendar</title>
+    <!-- Include ical.js from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/ical.js@1.4.1/build/ical.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .calendar-container {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>Live iCal Calendars</h1>
+    <div id="calendars"></div>
+
+    <script>
+        const urls = [
+            'https://www1.navcanada.ca/getmyschedule/11624-da6da62c-5ee6-4c6e-baec-bcf3f62bd335.ics',
+            'https://www1.navcanada.ca/getmyschedule/151739-86f018f5-8746-47be-971d-04aeb11e36c2.ics',
+            'https://www1.navcanada.ca/getmyschedule/10687-4166f096-c7d1-45be-b287-357a39e49df9.ics'
+        ];
+
+        function fetchAndDisplayCalendar(url, index) {
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.text();
+                })
+                .then(data => {
+                    const jcalData = ICAL.parse(data);
+                    const comp = new ICAL.Component(jcalData);
+                    const vevents = comp.getAllSubcomponents('vevent');
+
+                    let eventsList = '';
+                    vevents.forEach(event => {
+                        const vevent = new ICAL.Event(event);
+                        eventsList += `<li>${vevent.summary} - ${vevent.startDate.toJSDate().toLocaleString()}</li>`;
+                    });
+
+                    document.getElementById('calendars').innerHTML += `
+                        <div class="calendar-container">
+                            <h3>Calendar ${index + 1}</h3>
+                            <ul>${eventsList || '<li>No events found</li>'}</ul>
+                        </div>`;
+                })
+                .catch(error => {
+                    document.getElementById('calendars').innerHTML += `
+                        <div class="calendar-container">
+                            <h3>Calendar ${index + 1}</h3>
+                            <p class="error">Error fetching calendar: ${error.message}</p>
+                        </div>`;
+                });
+        }
+
+        // Fetch all calendars
+        urls.forEach((url, index) => fetchAndDisplayCalendar(url, index));
+    </script>
+</body>
+</html>
