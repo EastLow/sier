@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live iCal Calendar</title>
+    <script src="path/to/ical.js"></script>
+</head>
+<body>
+    <div id="calendar"></div>
+    <script>
+        // You would need to use a library like ical.js to parse the iCal feeds
+        const urls = [
+            'https://www1.navcanada.ca/getmyschedule/11624-da6da62c-5ee6-4c6e-baec-bcf3f62bd335.ics',
+            'https://www1.navcanada.ca/getmyschedule/151739-86f018f5-8746-47be-971d-04aeb11e36c2.ics',
+            'https://www1.navcanada.ca/getmyschedule/10687-4166f096-c7d1-45be-b287-357a39e49df9.ics'
+        ];
+
+        // Function to fetch and display iCal data
+        function updateCalendar() {
+            urls.forEach((url, index) => {
+                fetch(url)
+                    .then(response => response.text())
+                    .then(data => {
+                        // Here you would parse and display the calendar. This example is simplified:
+                        document.getElementById('calendar').innerHTML += `<h3>Calendar ${index + 1}</h3><pre>${data.slice(0, 1000)}...</pre>`;
+                    });
+            });
+        }
+
+        // Update every minute or as needed
+        setInterval(updateCalendar, 60000);
+        updateCalendar(); // Initial load
+    </script>
+</body>
+</html>
